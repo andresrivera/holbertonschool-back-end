@@ -3,33 +3,29 @@
 -------------------------------------------------------------------------------
 MODULE NAME:
 -------------------------------------------------------------------------------
-    0-gather_data_from_an_API
+    3-dictonary_of_list_of_dictionaries
 -------------------------------------------------------------------------------
 MODULE DESCRIPTION:
 -------------------------------------------------------------------------------
-    Write a Python script that, using this REST API, for a given employee ID,
-    returns information about his/her TO DO list progress.
+    Using what you did in the task #0, extend your Python script to export data
+    in the JSON format.
     REST API: https://jsonplaceholder.typicode.com/
 -------------------------------------------------------------------------------
 REQUERIMENTS:
 -------------------------------------------------------------------------------
-    -You must use urllib or requests module
-    -The script must accept an integer as a parameter, which is the employee ID
-    -The script must display on the standard output the employee TO DO list pro
-     gress in this exact format:
-    -First line: Employee EMPLOYEE_NAME is done with tasks(NUMBER_OF_DONE_TASKS
-     /TOTAL_NUMBER_OF_TASKS):
-    -EMPLOYEE_NAME: name of the employee
-    -NUMBER_OF_DONE_TASKS: number of completed tasks
-    -TOTAL_NUMBER_OF_TASKS: total number of tasks, which is the sum of complete
-     d and non-completed tasks
-    -Second and N next lines display the title of completed tasks: TASK_TITLE (
-     with 1 tabulation and 1 space before the TASK_TITLE)
+    -Records all tasks from all employees
+    -Format must be: { "USER_ID": [ {"username": "USERNAME", "task": "TASK_TITL
+     E", "completed": TASK_COMPLETED_STATUS}, {"username": "USERNAME", "task":
+     "TASK_TITLE", "completed": TASK_COMPLETED_STATUS}, ... ], "USER_ID": [ {"u
+     sername": "USERNAME", "task": "TASK_TITLE", "completed": TASK_COMPLETED_ST
+     ATUS}, {"username": "USERNAME", "task": "TASK_TITLE", "completed": TASK_CO
+     MPLETED_STATUS}, ... ]}
+    -File name must be: todo_all_employees.json
 -------------------------------------------------------------------------------
 IMPORTS:
 -------------------------------------------------------------------------------
+    -json: That converts a data into a format json
     -requests: for obtain the data that we need from the API
-    -argv: to obtain the id of the user to found the information
 -------------------------------------------------------------------------------
 STATUS CODE FOR REQUESTS
 -------------------------------------------------------------------------------
@@ -45,28 +41,37 @@ STATUS CODE FOR REQUESTS
     -502 Bad Gateway: Server acting as a gateway or proxy received.
     -503 Service Unavailable: Server is temporal unable to handle the request.
     -504 Gateway Timeout: Similar to 502, Server acting as a gateway or proxy
-            did not receive a timely response from an upstream server.
+         did not receive a timely response from an upstream server.
 """
+import json
 import requests
-from sys import argv
 
 
 if __name__ == "__main__":
     API_URL = "https://jsonplaceholder.typicode.com/"
 
-    user_id = argv[1]
-    response = requests.get("{}users/{}/todos".format(API_URL, user_id),
+    response = requests.get("{}todos".format(API_URL),
                             params={"_expand": "user"})
 
     if response.status_code == 200:
         data = response.json()
-        name = data[0]["user"]["name"]
-        task_done = [task for task in data if task["completed"]]
 
-        print("Employee {} is done with tasks({}/{}):".format(
-            name, len(task_done), len(data)))
-        for task in task_done:
-            print("\t {}".format(task["title"]))
+        dict_employed = {}
+
+        for task in data:
+            dict_employed[task["userId"]] = []
+
+        json_filename = "todo_all_employees.json"
+        with open(json_filename, mode="w", encoding="utf-8") as json_file:
+            for task in data:
+                dict_temp = {
+                    "task": task["title"],
+                    "completed": task["completed"],
+                    "username": task["user"]["username"]
+                    }
+                dict_employed[task["userId"]].append(dict_temp)
+
+            json.dump(dict_employed, json_file)
 
     else:
         print("Error: {}".format(response.status_code))
